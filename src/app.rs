@@ -7,6 +7,15 @@ pub enum AppError {
     EmptyStorage,
 }
 
+impl From<StorageError> for AppError {
+    fn from(err: StorageError) -> Self {
+        match err {
+            StorageError::TaskNotFound(id) => AppError::TaskNotFound(id),
+            StorageError::EmptyStorage => AppError::EmptyStorage,
+        }
+    }
+}
+
 pub struct App {
     storage: Box<dyn Storage<Error = StorageError>>,
 }
@@ -16,14 +25,32 @@ impl App {
         App { storage }
     }
 
-    pub fn dispatch(&self, _command: Commands) -> Result<(), AppError> {
-        todo!()
+    pub fn dispatch(&mut self, command: Commands) -> Result<(), AppError> {
+        match command {
+            Commands::Create(description) => {
+                self.storage.create(description)?;
+                Ok(())
+            }
+            Commands::Remove(id) => {
+                self.storage.remove(id)?;
+                Ok(())
+            }
+            Commands::Update(id, description) => {
+                self.storage.update(id, description)?;
+                Ok(())
+            }
+            Commands::List => {
+                self.storage.list();
+                Ok(())
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::{any::Any, cell::RefCell};
+    use std::cell::RefCell;
+    use std::rc::Rc;
 
     use super::*;
     use task_cli::core::tasks::{Status, Task};
@@ -31,7 +58,7 @@ mod tests {
 
     pub struct MockStorage {
         tasks: Vec<Task>,
-        list_called_times: RefCell<u8>,
+        list_called_times: Rc<RefCell<u8>>,
     }
 
     impl Storage for MockStorage {
@@ -93,14 +120,14 @@ mod tests {
         pub fn new() -> Self {
             MockStorage {
                 tasks: Vec::new(),
-                list_called_times: RefCell::new(0),
+                list_called_times: Rc::new(RefCell::new(0)),
             }
         }
     }
 
     #[test]
     fn app_dispatch_creates_one_task() {
-        let app = App::new(Box::new(MockStorage::new()));
+        let mut app = App::new(Box::new(MockStorage::new()));
         let command = Commands::Create("Task".into());
         let result = app.dispatch(command);
         assert!(result.is_ok());
@@ -116,18 +143,18 @@ mod tests {
 
     #[test]
     fn app_dispatch_creates_sequential_id_tasks() {
-        let app = App::new(Box::new(MockStorage::new()));
+        let mut app = App::new(Box::new(MockStorage::new()));
         for i in 1..=3 {
             let _result = app.dispatch(Commands::Create(format!("Task {}", i)));
         }
         for (i, task) in app.storage.list().iter().enumerate() {
-            assert_eq!(i as u32, task.id);
+            assert_eq!((i + 1) as u32, task.id);
         }
     }
 
     #[test]
     fn app_dispatch_removes_one_task() {
-        let app = App::new(Box::new(MockStorage::new()));
+        let mut app = App::new(Box::new(MockStorage::new()));
         let _result = app.dispatch(Commands::Create("Remove me".into()));
         let command = Commands::Remove(1);
         let result = app.dispatch(command);
@@ -137,7 +164,7 @@ mod tests {
 
     #[test]
     fn app_dispatch_trying_to_remove_from_empty_storage_returns_empty_storage_error() {
-        let app = App::new(Box::new(MockStorage::new()));
+        let mut app = App::new(Box::new(MockStorage::new()));
         let command = Commands::Remove(1);
         let result = app.dispatch(command);
         assert!(result.is_err());
@@ -146,7 +173,7 @@ mod tests {
 
     #[test]
     fn app_dispatch_trying_to_remove_invalid_id_returns_task_not_found_error() {
-        let app = App::new(Box::new(MockStorage::new()));
+        let mut app = App::new(Box::new(MockStorage::new()));
         let _result = app.dispatch(Commands::Create("Task".into()));
         let command = Commands::Remove(2);
         let result = app.dispatch(command);
@@ -156,7 +183,7 @@ mod tests {
 
     #[test]
     fn app_dispatch_updates_one_task() {
-        let app = App::new(Box::new(MockStorage::new()));
+        let mut app = App::new(Box::new(MockStorage::new()));
         let _result = app.dispatch(Commands::Create("Rename me".into()));
         let command = Commands::Update(1, "Renamed".into());
         let result = app.dispatch(command);
@@ -173,7 +200,7 @@ mod tests {
 
     #[test]
     fn app_dispatch_trying_to_update_from_empty_storage_returns_empty_storage_error() {
-        let app = App::new(Box::new(MockStorage::new()));
+        let mut app = App::new(Box::new(MockStorage::new()));
         let command = Commands::Update(1, "Empty Storage".into());
         let result = app.dispatch(command);
         assert!(result.is_err());
@@ -182,7 +209,7 @@ mod tests {
 
     #[test]
     fn app_dispatch_trying_to_update_invalid_id_returns_task_not_found_error() {
-        let app = App::new(Box::new(MockStorage::new()));
+        let mut app = App::new(Box::new(MockStorage::new()));
         let _result = app.dispatch(Commands::Create("Task".into()));
         let command = Commands::Update(2, "Not Found".into());
         let result = app.dispatch(command);
@@ -192,18 +219,12 @@ mod tests {
 
     #[test]
     fn app_dispatch_calls_storage_list_method() {
-        let app = App::new(Box::new(MockStorage::new()));
-        let list_called_times = &get_mock_storage(&app).list_called_times;
+        let mock = MockStorage::new();
+        let list_called_times = mock.list_called_times.clone();
+        let mut app = App::new(Box::new(mock));
         assert_eq!(*list_called_times.borrow(), 0);
         let result = app.dispatch(Commands::List);
-        let list_called_times = &get_mock_storage(&app).list_called_times;
         assert!(result.is_ok());
         assert_eq!(*list_called_times.borrow(), 1);
-    }
-
-    fn get_mock_storage(app: &App) -> &MockStorage {
-        (&app.storage as &dyn Any)
-            .downcast_ref::<MockStorage>()
-            .unwrap()
     }
 }
