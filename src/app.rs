@@ -1,5 +1,6 @@
 use clap::Parser;
 use task_cli::Commands;
+use task_cli::core::tasks::Status;
 use task_cli::storage::{Storage, StorageError};
 
 #[derive(Parser, Debug)]
@@ -47,7 +48,18 @@ impl App {
                 Ok(())
             }
             Commands::List => {
-                self.storage.list();
+                let tasks = self.storage.list();
+                if tasks.is_empty() {
+                    return Ok(());
+                }
+                for task in tasks {
+                    let status_str = match task.status {
+                        Status::Todo => "to-do",
+                        Status::InProgress => "in progress",
+                        Status::Done => "done",
+                    };
+                    println!("{}: ({}) {}", task.id, status_str, task.description);
+                }
                 Ok(())
             }
         }
