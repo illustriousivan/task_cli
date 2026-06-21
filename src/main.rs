@@ -1,16 +1,15 @@
 mod app;
-mod core;
-mod storage;
 
 use clap::Parser;
-use app::App;
-use core::commands::{Cli, Commands};
+use task_cli::JsonStorage;
+
+use crate::app::{App, Cli};
 
 fn main() {
     let cli = Cli::parse();
 
     // Initialize app with storage
-    let storage = Box::new(storage::json_storage::JsonStorage::new("tasks.json"));
+    let storage = Box::new(JsonStorage::new("tasks.json"));
     let mut app = App::new(storage);
 
     // Dispatch command through App

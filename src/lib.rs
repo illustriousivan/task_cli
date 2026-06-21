@@ -1,5 +1,5 @@
-pub mod app;
 pub mod core;
 pub mod storage;
 
-pub use app::App;
+pub use core::commands::Commands;
+pub use storage::json_storage::JsonStorage;

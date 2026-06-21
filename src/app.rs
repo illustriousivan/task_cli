@@ -1,5 +1,12 @@
-use crate::core::commands::Commands;
-use crate::storage::{Storage, StorageError};
+use clap::Parser;
+use task_cli::Commands;
+use task_cli::storage::{Storage, StorageError};
+
+#[derive(Parser, Debug)]
+pub struct Cli {
+    #[command(subcommand)]
+    pub command: Commands,
+}
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum AppError {
@@ -53,8 +60,8 @@ mod tests {
     use std::rc::Rc;
 
     use super::*;
-    use crate::core::tasks::{Status, Task};
-    use crate::storage::StorageError;
+    use task_cli::core::tasks::{Status, Task};
+    use task_cli::storage::StorageError;
 
     pub struct MockStorage {
         tasks: Vec<Task>,
@@ -128,7 +135,9 @@ mod tests {
     #[test]
     fn app_dispatch_creates_one_task() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let command = Commands::Create { description: "Task".into() };
+        let command = Commands::Create {
+            description: "Task".into(),
+        };
         let result = app.dispatch(command);
         assert!(result.is_ok());
         assert_eq!(
@@ -145,7 +154,9 @@ mod tests {
     fn app_dispatch_creates_sequential_id_tasks() {
         let mut app = App::new(Box::new(MockStorage::new()));
         for i in 1..=3 {
-            let _result = app.dispatch(Commands::Create { description: format!("Task {}", i) });
+            let _result = app.dispatch(Commands::Create {
+                description: format!("Task {}", i),
+            });
         }
         for (i, task) in app.storage.list().iter().enumerate() {
             assert_eq!((i + 1) as u32, task.id);
@@ -155,7 +166,9 @@ mod tests {
     #[test]
     fn app_dispatch_removes_one_task() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let _result = app.dispatch(Commands::Create { description: "Remove me".into() });
+        let _result = app.dispatch(Commands::Create {
+            description: "Remove me".into(),
+        });
         let command = Commands::Remove { id: 1 };
         let result = app.dispatch(command);
         assert!(result.is_ok());
@@ -174,7 +187,9 @@ mod tests {
     #[test]
     fn app_dispatch_trying_to_remove_invalid_id_returns_task_not_found_error() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let _result = app.dispatch(Commands::Create { description: "Task".into() });
+        let _result = app.dispatch(Commands::Create {
+            description: "Task".into(),
+        });
         let command = Commands::Remove { id: 2 };
         let result = app.dispatch(command);
         assert!(result.is_err());
@@ -184,8 +199,13 @@ mod tests {
     #[test]
     fn app_dispatch_updates_one_task() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let _result = app.dispatch(Commands::Create { description: "Rename me".into() });
-        let command = Commands::Update { id: 1, description: "Renamed".into() };
+        let _result = app.dispatch(Commands::Create {
+            description: "Rename me".into(),
+        });
+        let command = Commands::Update {
+            id: 1,
+            description: "Renamed".into(),
+        };
         let result = app.dispatch(command);
         assert!(result.is_ok());
         assert_eq!(
@@ -201,7 +221,10 @@ mod tests {
     #[test]
     fn app_dispatch_trying_to_update_from_empty_storage_returns_empty_storage_error() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let command = Commands::Update { id: 1, description: "Empty Storage".into() };
+        let command = Commands::Update {
+            id: 1,
+            description: "Empty Storage".into(),
+        };
         let result = app.dispatch(command);
         assert!(result.is_err());
         assert_eq!(result, Err(AppError::EmptyStorage));
@@ -210,8 +233,13 @@ mod tests {
     #[test]
     fn app_dispatch_trying_to_update_invalid_id_returns_task_not_found_error() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let _result = app.dispatch(Commands::Create { description: "Task".into() });
-        let command = Commands::Update { id: 2, description: "Not Found".into() };
+        let _result = app.dispatch(Commands::Create {
+            description: "Task".into(),
+        });
+        let command = Commands::Update {
+            id: 2,
+            description: "Not Found".into(),
+        };
         let result = app.dispatch(command);
         assert!(result.is_err());
         assert_eq!(result, Err(AppError::TaskNotFound(2)));
