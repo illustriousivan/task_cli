@@ -2,7 +2,7 @@
 
 ## ✅ Completed
 
-- [x] Implement `App::dispatch` logic in `src/app.rs`. ID: description (status)
+- [x] Implement `App::dispatch` logic in `src/app.rs`.
 - [x] Integrate `clap` for professional CLI argument handling.
 
 ## 🎯 Short-Term Goals

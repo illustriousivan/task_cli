@@ -81,10 +81,7 @@ Contributions are welcome! Please refer to the `CONTRIBUTING.md` for guidelines.
 
 ## 🗺 Roadmap
 
-- [ ] Implement robust CLI argument parsing with `clap`.
-- [ ] Add colorized output for different statuses.
-- [ ] Support for interactive "To-Do" mode.
-- [ ] Multiple storage backends (SQLite, YAML).
+See [`ROADMAP.md`](./ROADMAP.md) for the full development plan.
 
 ---
 
