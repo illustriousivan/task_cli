@@ -2,12 +2,7 @@
 
 ## ✅ Completed
 
-- [x] Implement `App::dispatch` logic in `src/app.rs`.
-  - Tasks are now printed to stdout with minimal, Linux-tool-like formatting:
-    ```
-    ID: description (status)
-    ```
-  - Status variants converted to lowercase with hyphens (`to-do`, `in progress`, `done`)
+- [x] Implement `App::dispatch` logic in `src/app.rs`. ID: description (status)
 - [x] Integrate `clap` for professional CLI argument handling.
 
 ## 🎯 Short-Term Goals
@@ -16,6 +11,7 @@
 - [ ] Add a "clear all" command.
 
 ## 🚀 Long-Term Goals
+
 - [ ] Support for different storage backends (SQLite, YAML).
 - [ ] Interactive "Guided" mode for task creation.
 - [ ] Export tasks to CSV/Markdown formats.
