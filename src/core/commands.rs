@@ -10,9 +10,15 @@ pub enum Commands {
     #[command(name = "remove")]
     Remove { id: u32 },
 
-    /// Update an existing task's description
+    /// Update an existing task
     #[command(name = "update")]
-    Update { id: u32, description: String },
+    Update { 
+        id: u32, 
+        #[arg(long)]
+        description: Option<String>, 
+        #[arg(long)]
+        status: Option<String>, 
+    },
 
     /// List all tasks
     #[command(name = "list")]
