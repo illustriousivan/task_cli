@@ -5,10 +5,10 @@
 - [x] Implement `App::dispatch` logic in `src/app.rs`.
 - [x] Integrate `clap` for professional CLI argument handling.
 - [x] Add `--all` and `--status` options to `list` command with case-insensitive status parsing.
+- [x] Add `--description` and `--status` options to `update <id>` command, supporting simultaneous updates.
 
 ## 🎯 Short-Term Goals
 
-- [ ] Add `--status` and `--description` options to `update <id>` command.
 - [ ] Add color support using `colored` or `termcolor` crates.
 - [ ] Add a "clear all" command.
 
