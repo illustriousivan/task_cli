@@ -44,8 +44,26 @@ impl App {
                 self.storage.remove(id)?;
                 Ok(())
             }
-            Commands::Update { id, description } => {
-                self.storage.update(id, description)?;
+            Commands::Update { id, description, status } => {
+                let (desc_changed, status_changed) = (description.is_some(), status.is_some());
+                if !desc_changed && !status_changed {
+                    eprintln!("Nothing has changed.");
+                    eprintln!("Usage: update <id> --description \"text\" or --status [todo|in-progress|done]");
+                    return Ok(());
+                }
+
+                let mut task = self.storage.get(id)?;
+
+                if let Some(desc) = description {
+                    task.description = desc;
+                }
+
+                if let Some(status_str) = status {
+                    let parsed_status = parse_status(&status_str).map_err(|_| AppError::EmptyStorage)?;
+                    task.status = parsed_status;
+                }
+
+                self.storage.update(task)?;
                 Ok(())
             }
             Commands::List { all, status } => {
@@ -101,18 +119,24 @@ mod tests {
             Ok(id)
         }
 
-        fn update(&mut self, id: u32, description: String) -> Result<(), Self::Error> {
+        fn get(&self, id: u32) -> Result<Task, Self::Error> {
             if self.tasks.is_empty() {
                 return Err(StorageError::EmptyStorage);
             }
-            let task = self.tasks.iter_mut().find(|t| t.id == id);
-            match task {
-                Some(t) => {
-                    t.description = description;
-                    Ok(())
-                }
-                None => Err(StorageError::TaskNotFound(id)),
+            self.tasks.iter().find(|t| t.id == id).cloned()
+                .ok_or(StorageError::TaskNotFound(id))
+        }
+
+        fn update(&mut self, task: Task) -> Result<(), Self::Error> {
+            if self.tasks.is_empty() {
+                return Err(StorageError::EmptyStorage);
             }
+            let existing = self.tasks.iter_mut().find(|t| t.id == task.id);
+            match existing {
+                Some(t) => *t = task,
+                None => return Err(StorageError::TaskNotFound(task.id)),
+            }
+            Ok(())
         }
 
         fn remove(&mut self, id: u32) -> Result<(), Self::Error> {
@@ -217,14 +241,30 @@ mod tests {
     }
 
     #[test]
-    fn app_dispatch_updates_one_task() {
+    fn app_dispatch_update_no_options_prints_nothing_changed() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let _result = app.dispatch(Commands::Create {
-            description: "Rename me".into(),
+        let _ = app.dispatch(Commands::Create {
+            description: "Task".into(),
         });
         let command = Commands::Update {
             id: 1,
-            description: "Renamed".into(),
+            description: None,
+            status: None,
+        };
+        let result = app.dispatch(command);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn app_dispatch_update_only_description_updates_description_preserves_status() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let _ = app.dispatch(Commands::Create {
+            description: "Original".into(),
+        });
+        let command = Commands::Update {
+            id: 1,
+            description: Some("Updated".into()),
+            status: None,
         };
         let result = app.dispatch(command);
         assert!(result.is_ok());
@@ -232,37 +272,100 @@ mod tests {
             app.storage.list(),
             vec![Task {
                 id: 1,
-                description: "Renamed".into(),
+                description: "Updated".into(),
                 status: Status::Todo,
             }]
-        )
+        );
     }
 
     #[test]
-    fn app_dispatch_trying_to_update_from_empty_storage_returns_empty_storage_error() {
+    fn app_dispatch_update_only_status_updates_status_preserves_description() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let _ = app.dispatch(Commands::Create {
+            description: "Task".into(),
+        });
+        let command = Commands::Update {
+            id: 1,
+            description: None,
+            status: Some("done".into()),
+        };
+        let result = app.dispatch(command);
+        assert!(result.is_ok());
+        assert_eq!(
+            app.storage.list(),
+            vec![Task {
+                id: 1,
+                description: "Task".into(),
+                status: Status::Done,
+            }]
+        );
+    }
+
+    #[test]
+    fn app_dispatch_update_both_description_and_status_updates_both() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let _ = app.dispatch(Commands::Create {
+            description: "Original".into(),
+        });
+        let command = Commands::Update {
+            id: 1,
+            description: Some("Updated".into()),
+            status: Some("done".into()),
+        };
+        let result = app.dispatch(command);
+        assert!(result.is_ok());
+        assert_eq!(
+            app.storage.list(),
+            vec![Task {
+                id: 1,
+                description: "Updated".into(),
+                status: Status::Done,
+            }]
+        );
+    }
+
+    #[test]
+    fn app_dispatch_update_invalid_status_returns_error() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let _ = app.dispatch(Commands::Create {
+            description: "Task".into(),
+        });
+        let command = Commands::Update {
+            id: 1,
+            description: None,
+            status: Some("invalid".into()),
+        };
+        let result = app.dispatch(command);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn app_dispatch_update_nonexistent_id_returns_task_not_found() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let _ = app.dispatch(Commands::Create {
+            description: "Task".into(),
+        });
+        let command = Commands::Update {
+            id: 99,
+            description: Some("Updated".into()),
+            status: None,
+        };
+        let result = app.dispatch(command);
+        assert!(result.is_err());
+        assert_eq!(result, Err(AppError::TaskNotFound(99)));
+    }
+
+    #[test]
+    fn app_dispatch_update_empty_storage_returns_error() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let command = Commands::Update {
             id: 1,
-            description: "Empty Storage".into(),
+            description: Some("Updated".into()),
+            status: None,
         };
         let result = app.dispatch(command);
         assert!(result.is_err());
         assert_eq!(result, Err(AppError::EmptyStorage));
-    }
-
-    #[test]
-    fn app_dispatch_trying_to_update_invalid_id_returns_task_not_found_error() {
-        let mut app = App::new(Box::new(MockStorage::new()));
-        let _result = app.dispatch(Commands::Create {
-            description: "Task".into(),
-        });
-        let command = Commands::Update {
-            id: 2,
-            description: "Not Found".into(),
-        };
-        let result = app.dispatch(command);
-        assert!(result.is_err());
-        assert_eq!(result, Err(AppError::TaskNotFound(2)));
     }
 
     #[test]
@@ -280,7 +383,6 @@ mod tests {
     fn app_dispatch_list_default_shows_todo_and_in_progress_but_not_done() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let _ = app.dispatch(Commands::Create { description: "Todo task".into() });
-        // Simulate having tasks with different statuses by directly manipulating mock
         let command = Commands::List { all: false, status: None };
         let result = app.dispatch(command);
         assert!(result.is_ok());

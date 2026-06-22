@@ -45,13 +45,25 @@ impl Storage for JsonStorage {
         Ok(next_id)
     }
 
-    fn update(&mut self, id: u32, description: String) -> Result<(), Self::Error> {
+    fn get(&self, id: u32) -> Result<Task, Self::Error> {
+        let tasks = self.read_tasks();
+        if tasks.is_empty() {
+            return Err(StorageError::EmptyStorage);
+        }
+        tasks.iter().find(|t| t.id == id).cloned()
+            .ok_or(StorageError::TaskNotFound(id))
+    }
+
+    fn update(&mut self, task: Task) -> Result<(), Self::Error> {
         let mut tasks = self.read_tasks();
-        let task = tasks
-            .iter_mut()
-            .find(|t| t.id == id)
-            .ok_or(StorageError::TaskNotFound(id))?;
-        task.description = description;
+        if tasks.is_empty() {
+            return Err(StorageError::EmptyStorage);
+        }
+        let existing = tasks.iter_mut().find(|t| t.id == task.id);
+        match existing {
+            Some(t) => *t = task,
+            None => return Err(StorageError::TaskNotFound(task.id)),
+        }
         self.write_tasks(&tasks)?;
         Ok(())
     }
@@ -132,14 +144,56 @@ mod tests {
         assert_eq!(storage.list().len(), 1);
     }
 
+    // ── get() ────────────────────────────────────────────────
+
+    #[test]
+    fn test_get_existing_task() {
+        let (storage, _tmp) = setup_storage(vec![Task {
+            id: 1,
+            description: "Existing".into(),
+            status: Status::Todo,
+        }]);
+
+        let task = storage.get(1).unwrap();
+        assert_eq!(task.description, "Existing");
+        assert_eq!(task.status, Status::Todo);
+    }
+
+    #[test]
+    fn test_get_nonexistent_task_returns_error() {
+        let (storage, _tmp) = setup_storage(vec![Task {
+            id: 1,
+            description: "Existing".into(),
+            status: Status::Todo,
+        }]);
+
+        let result = storage.get(999);
+        assert_eq!(result.unwrap_err(), StorageError::TaskNotFound(999));
+    }
+
+    #[test]
+    fn test_get_empty_storage_returns_error() {
+        let (storage, _tmp) = setup_storage(vec![]);
+
+        let result = storage.get(1);
+        assert_eq!(result.unwrap_err(), StorageError::EmptyStorage);
+    }
+
     // ── update() ─────────────────────────────────────────────
 
     #[test]
     fn test_update_existing_task() {
-        let (mut storage, _tmp) = setup_storage(vec![]);
+        let (mut storage, _tmp) = setup_storage(vec![Task {
+            id: 1,
+            description: "Original".into(),
+            status: Status::Todo,
+        }]);
 
-        let id = storage.create("Original".into()).unwrap();
-        storage.update(id, "Updated".into()).unwrap();
+        storage.update(Task {
+            id: 1,
+            description: "Updated".into(),
+            status: Status::Todo,
+        }).unwrap();
 
         let tasks = storage.list();
         assert_eq!(tasks[0].description, "Updated");
@@ -147,25 +201,37 @@ mod tests {
 
     #[test]
     fn test_update_nonexistent_task_returns_error() {
-        let (mut storage, _tmp) = setup_storage(vec![]);
+        let (mut storage, _tmp) = setup_storage(vec![Task {
+            id: 1,
+            description: "Existing".into(),
+            status: Status::Todo,
+        }]);
 
-        let result = storage.update(999, "Ghost".into());
+        let result = storage.update(Task {
+            id: 999,
+            description: "Ghost".into(),
+            status: Status::Todo,
+        });
         assert_eq!(result.unwrap_err(), StorageError::TaskNotFound(999));
     }
 
     #[test]
-    fn test_update_preserves_status() {
+    fn test_update_replaces_full_task() {
         let (mut storage, _tmp) = setup_storage(vec![Task {
             id: 1,
             description: "Old".into(),
             status: Status::InProgress,
         }]);
 
-        storage.update(1, "Changed".into()).unwrap();
+        storage.update(Task {
+            id: 1,
+            description: "Changed".into(),
+            status: Status::Done,
+        }).unwrap();
 
         let tasks = storage.list();
         assert_eq!(tasks[0].description, "Changed");
-        assert_eq!(tasks[0].status, Status::InProgress);
+        assert_eq!(tasks[0].status, Status::Done);
     }
 
     // ── remove() ─────────────────────────────────────────────
@@ -283,7 +349,10 @@ mod tests {
         assert_eq!(storage.list().len(), 2);
 
         // Update.
-        storage.update(id1, "Updated task one".into()).unwrap();
+        let task = storage.get(id1).unwrap();
+        let mut updated_task = task.clone();
+        updated_task.description = "Updated task one".into();
+        storage.update(updated_task).unwrap();
         assert_eq!(storage.list()[0].description, "Updated task one");
 
         // Remove.
