@@ -8,7 +8,9 @@ storage system.
 ## 🚀 Features
 
 - **Create Tasks**: Easily add new tasks with descriptions.
-- **List Tasks**: View all your current tasks in a structured format.
+- **List Tasks**: View tasks filtered by status, or show all tasks with `--all`.
+  - Default: shows only `Todo` and `InProgress` tasks.
+  - `task_cli list --status todo` — filter by specific status (case-insensitive).
 - **Update Tasks**: Modify existing tasks (e.g., update descriptions).
 - **Remove Tasks**: Delete completed or no longer needed tasks.
 - **Status Tracking**: Categorize tasks into `Todo`, `InProgress`, or `Done`.
@@ -54,7 +56,15 @@ Prerequisites: [Rust and Cargo](https://rustup.rs/)
 - **List all tasks**:
 
   ```bash
-  task_cli list
+  task_cli list --all
+  ```
+
+- **List tasks by status** (case-insensitive, supports spaces and hyphens):
+
+  ```bash
+  task_cli list --status todo
+  task_cli list --status "in-progress"
+  task_cli list --status done
   ```
 
 - **Update a task**:
@@ -71,7 +81,7 @@ Prerequisites: [Rust and Cargo](https://rustup.rs/)
 
 ## 🏗 Architecture
 
-- `src/core/`: Contains the core domain models (`tasks.rs`) and command definitions (`commands.rs`).
+- `src/core/`: Contains the core domain models (`tasks.rs`), command definitions (`commands.rs`), and status parsing (`status.rs`).
 - `src/storage/`: Handles data persistence, specifically `json_storage.rs` for file I/O.
 - `src/app.rs`: The main application logic and command dispatcher.
 
