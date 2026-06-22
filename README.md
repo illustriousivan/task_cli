@@ -11,7 +11,10 @@ storage system.
 - **List Tasks**: View tasks filtered by status, or show all tasks with `--all`.
   - Default: shows only `Todo` and `InProgress` tasks.
   - `task_cli list --status todo` — filter by specific status (case-insensitive).
-- **Update Tasks**: Modify existing tasks (e.g., update descriptions).
+- **Update Tasks**: Modify existing tasks by description, status, or both simultaneously.
+  - `task_cli update <id> --description "New description"` — change the task description.
+  - `task_cli update <id> --status done` — change the task status (case-insensitive).
+  - Both options can be combined to update multiple fields at once.
 - **Remove Tasks**: Delete completed or no longer needed tasks.
 - **Status Tracking**: Categorize tasks into `Todo`, `InProgress`, or `Done`.
 - **JSON Persistence**: Automatically saves your tasks to a local JSON file.
@@ -67,10 +70,22 @@ Prerequisites: [Rust and Cargo](https://rustup.rs/)
   task_cli list --status done
   ```
 
-- **Update a task**:
+- **Update a task** (change description):
 
   ```bash
-  task_cli update <id> "New description"
+  task_cli update <id> --description "New description"
+  ```
+
+- **Update a task status**:
+
+  ```bash
+  task_cli update <id> --status done
+  ```
+
+- **Update both description and status at once**:
+
+  ```bash
+  task_cli update <id> --description "Completed task" --status done
   ```
 
 - **Remove a task**:
