@@ -7,7 +7,8 @@
 
 ## 🎯 Short-Term Goals
 
-- [ ] Add a `--all` and `--status` options to `list` command.
+- [ ] Add `--all` and `--status` options to `list` command.
+- [ ] Add `--status` and `--description` options to `update <id>` command.
 - [ ] Add color support using `colored` or `termcolor` crates.
 - [ ] Add a "clear all" command.
 
