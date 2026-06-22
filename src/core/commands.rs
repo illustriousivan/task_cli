@@ -16,5 +16,11 @@ pub enum Commands {
 
     /// List all tasks
     #[command(name = "list")]
-    List,
+    List {
+        #[arg(long)]
+        all: bool,
+
+        #[arg(long)]
+        status: Option<String>,
+    },
 }
