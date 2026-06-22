@@ -1,9 +1,17 @@
 # Roadmap
 
+## ✅ Completed
+
+- [x] Implement `App::dispatch` logic in `src/app.rs`.
+  - Tasks are now printed to stdout with minimal, Linux-tool-like formatting:
+    ```
+    ID: description (status)
+    ```
+  - Status variants converted to lowercase with hyphens (`to-do`, `in progress`, `done`)
+- [x] Integrate `clap` for professional CLI argument handling.
+
 ## 🎯 Short-Term Goals
 
-- [ ] Implement `App::dispatch` logic in `src/app.rs`.
-- [ ] Integrate `clap` for professional CLI argument handling.
 - [ ] Add color support using `colored` or `termcolor` crates.
 - [ ] Add a "clear all" command.
 

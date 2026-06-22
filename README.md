@@ -45,8 +45,6 @@ Prerequisites: [Rust and Cargo](https://rustup.rs/)
 
 ## 📖 Usage Examples
 
-(Note: CLI arguments are currently being finalized)
-
 - **Create a task**:
 
   ```bash
