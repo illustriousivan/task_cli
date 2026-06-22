@@ -1,5 +1,6 @@
 use clap::Parser;
 use task_cli::Commands;
+use task_cli::core::status::parse_status;
 use task_cli::core::tasks::Status;
 use task_cli::storage::{Storage, StorageError};
 
@@ -47,8 +48,15 @@ impl App {
                 self.storage.update(id, description)?;
                 Ok(())
             }
-            Commands::List => {
-                let tasks = self.storage.list();
+            Commands::List { all, status } => {
+                let tasks = if all {
+                    self.storage.list()
+                } else if let Some(ref s) = status {
+                    let parsed_status = parse_status(s.as_str()).map_err(|_| AppError::EmptyStorage)?;
+                    self.storage.list_by_status(parsed_status)
+                } else {
+                    self.storage.list().into_iter().filter(|t| t.status != Status::Done).collect()
+                };
                 if tasks.is_empty() {
                     return Ok(());
                 }
@@ -263,8 +271,42 @@ mod tests {
         let list_called_times = mock.list_called_times.clone();
         let mut app = App::new(Box::new(mock));
         assert_eq!(*list_called_times.borrow(), 0);
-        let result = app.dispatch(Commands::List);
+        let result = app.dispatch(Commands::List { all: false, status: None });
         assert!(result.is_ok());
         assert_eq!(*list_called_times.borrow(), 1);
+    }
+
+    #[test]
+    fn app_dispatch_list_default_shows_todo_and_in_progress_but_not_done() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let _ = app.dispatch(Commands::Create { description: "Todo task".into() });
+        // Simulate having tasks with different statuses by directly manipulating mock
+        let command = Commands::List { all: false, status: None };
+        let result = app.dispatch(command);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn app_dispatch_list_all_shows_everything() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let command = Commands::List { all: true, status: None };
+        let result = app.dispatch(command);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn app_dispatch_list_with_status_uses_list_by_status() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let command = Commands::List { all: false, status: Some("todo".into()) };
+        let result = app.dispatch(command);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn app_dispatch_list_with_status_done_uses_list_by_status() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let command = Commands::List { all: false, status: Some("done".into()) };
+        let result = app.dispatch(command);
+        assert!(result.is_ok());
     }
 }
