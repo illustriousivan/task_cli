@@ -7,6 +7,7 @@
 
 ## 🎯 Short-Term Goals
 
+- [ ] Add a `--all` and `--status` options to `list` command.
 - [ ] Add color support using `colored` or `termcolor` crates.
 - [ ] Add a "clear all" command.
 
