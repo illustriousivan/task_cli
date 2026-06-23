@@ -53,7 +53,7 @@ Prerequisites: [Rust and Cargo](https://rustup.rs/)
 - **Create a task**:
 
   ```bash
-  task_cli create "Finish the portfolio project"
+  task_cli create --description "Finish the portfolio project"
   ```
 
 - **List all tasks**:

@@ -6,6 +6,7 @@
 - [x] Integrate `clap` for professional CLI argument handling.
 - [x] Add `--all` and `--status` options to `list` command with case-insensitive status parsing.
 - [x] Add `--description` and `--status` options to `update <id>` command, supporting simultaneous updates.
+- [x] Change `create` command to use `--description` flag instead of positional argument.
 
 ## 🎯 Short-Term Goals
 
