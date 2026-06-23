@@ -1,5 +1,8 @@
+mod commands;
+
+pub use commands::Commands;
+
 use clap::Parser;
-use task_cli::Commands;
 use task_cli::core::status::parse_status;
 use task_cli::core::tasks::Status;
 use task_cli::storage::{Storage, StorageError};
@@ -54,11 +57,17 @@ impl App {
                 self.storage.remove(id)?;
                 Ok(())
             }
-            Commands::Update { id, description, status } => {
+            Commands::Update {
+                id,
+                description,
+                status,
+            } => {
                 let (desc_changed, status_changed) = (description.is_some(), status.is_some());
                 if !desc_changed && !status_changed {
                     eprintln!("Nothing has changed.");
-                    eprintln!("Usage: update <id> --description \"text\" or --status [todo|in-progress|done]");
+                    eprintln!(
+                        "Usage: update <id> --description \"text\" or --status [todo|in-progress|done]"
+                    );
                     return Ok(());
                 }
 
@@ -69,7 +78,8 @@ impl App {
                 }
 
                 if let Some(status_str) = status {
-                    let parsed_status = parse_status(&status_str).map_err(|_| AppError::EmptyStorage)?;
+                    let parsed_status =
+                        parse_status(&status_str).map_err(|_| AppError::EmptyStorage)?;
                     task.status = parsed_status;
                 }
 
@@ -80,10 +90,15 @@ impl App {
                 let tasks = if all {
                     self.storage.list()
                 } else if let Some(ref s) = status {
-                    let parsed_status = parse_status(s.as_str()).map_err(|_| AppError::EmptyStorage)?;
+                    let parsed_status =
+                        parse_status(s.as_str()).map_err(|_| AppError::EmptyStorage)?;
                     self.storage.list_by_status(parsed_status)
                 } else {
-                    self.storage.list().into_iter().filter(|t| t.status != Status::Done).collect()
+                    self.storage
+                        .list()
+                        .into_iter()
+                        .filter(|t| t.status != Status::Done)
+                        .collect()
                 };
                 if tasks.is_empty() {
                     return Ok(());
@@ -133,7 +148,10 @@ mod tests {
             if self.tasks.is_empty() {
                 return Err(StorageError::EmptyStorage);
             }
-            self.tasks.iter().find(|t| t.id == id).cloned()
+            self.tasks
+                .iter()
+                .find(|t| t.id == id)
+                .cloned()
                 .ok_or(StorageError::TaskNotFound(id))
         }
 
@@ -384,7 +402,10 @@ mod tests {
         let list_called_times = mock.list_called_times.clone();
         let mut app = App::new(Box::new(mock));
         assert_eq!(*list_called_times.borrow(), 0);
-        let result = app.dispatch(Commands::List { all: false, status: None });
+        let result = app.dispatch(Commands::List {
+            all: false,
+            status: None,
+        });
         assert!(result.is_ok());
         assert_eq!(*list_called_times.borrow(), 1);
     }
@@ -392,8 +413,13 @@ mod tests {
     #[test]
     fn app_dispatch_list_default_shows_todo_and_in_progress_but_not_done() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let _ = app.dispatch(Commands::Create { description: Some("Todo task".into()) });
-        let command = Commands::List { all: false, status: None };
+        let _ = app.dispatch(Commands::Create {
+            description: Some("Todo task".into()),
+        });
+        let command = Commands::List {
+            all: false,
+            status: None,
+        };
         let result = app.dispatch(command);
         assert!(result.is_ok());
     }
@@ -401,7 +427,10 @@ mod tests {
     #[test]
     fn app_dispatch_list_all_shows_everything() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let command = Commands::List { all: true, status: None };
+        let command = Commands::List {
+            all: true,
+            status: None,
+        };
         let result = app.dispatch(command);
         assert!(result.is_ok());
     }
@@ -409,7 +438,10 @@ mod tests {
     #[test]
     fn app_dispatch_list_with_status_uses_list_by_status() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let command = Commands::List { all: false, status: Some("todo".into()) };
+        let command = Commands::List {
+            all: false,
+            status: Some("todo".into()),
+        };
         let result = app.dispatch(command);
         assert!(result.is_ok());
     }
@@ -417,7 +449,10 @@ mod tests {
     #[test]
     fn app_dispatch_list_with_status_done_uses_list_by_status() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let command = Commands::List { all: false, status: Some("done".into()) };
+        let command = Commands::List {
+            all: false,
+            status: Some("done".into()),
+        };
         let result = app.dispatch(command);
         assert!(result.is_ok());
     }
@@ -425,7 +460,9 @@ mod tests {
     #[test]
     fn app_dispatch_create_empty_description_returns_invalid_description_error() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let command = Commands::Create { description: Some("".into()) };
+        let command = Commands::Create {
+            description: Some("".into()),
+        };
         let result = app.dispatch(command);
         assert!(result.is_err());
         assert_eq!(result, Err(AppError::InvalidDescription));
@@ -434,7 +471,9 @@ mod tests {
     #[test]
     fn app_dispatch_create_whitespace_description_returns_invalid_description_error() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let command = Commands::Create { description: Some("   ".into()) };
+        let command = Commands::Create {
+            description: Some("   ".into()),
+        };
         let result = app.dispatch(command);
         assert!(result.is_err());
         assert_eq!(result, Err(AppError::InvalidDescription));
