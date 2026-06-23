@@ -96,7 +96,8 @@ Prerequisites: [Rust and Cargo](https://rustup.rs/)
 
 ## 🏗 Architecture
 
-- `src/core/`: Contains the core domain models (`tasks.rs`), command definitions (`commands.rs`), and status parsing (`status.rs`).
+- `src/core/`: Contains the core domain models (`tasks.rs`) and status parsing (`status.rs`).
+- `src/app/commands.rs`: Command definitions for CLI operations (Create, List, Update, Remove).
 - `src/storage/`: Handles data persistence, specifically `json_storage.rs` for file I/O.
 - `src/app.rs`: The main application logic and command dispatcher.
 
