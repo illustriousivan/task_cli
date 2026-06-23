@@ -4,7 +4,10 @@ use clap::Subcommand;
 pub enum Commands {
     /// Create a new task with description
     #[command(name = "create")]
-    Create { description: String },
+    Create { 
+        #[arg(long)]
+        description: Option<String>, 
+    },
 
     /// Remove a task by ID
     #[command(name = "remove")]

@@ -14,6 +14,7 @@ pub struct Cli {
 pub enum AppError {
     TaskNotFound(u32),
     EmptyStorage,
+    InvalidDescription,
 }
 
 impl From<StorageError> for AppError {
@@ -37,7 +38,16 @@ impl App {
     pub fn dispatch(&mut self, command: Commands) -> Result<(), AppError> {
         match command {
             Commands::Create { description } => {
-                self.storage.create(description)?;
+                let desc = match description {
+                    None => {
+                        eprintln!("Nothing has changed.");
+                        eprintln!("Usage: create --description \"text\"");
+                        return Ok(());
+                    }
+                    Some(s) if s.trim().is_empty() => return Err(AppError::InvalidDescription),
+                    Some(s) => s,
+                };
+                self.storage.create(desc)?;
                 Ok(())
             }
             Commands::Remove { id } => {
@@ -180,7 +190,7 @@ mod tests {
     fn app_dispatch_creates_one_task() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let command = Commands::Create {
-            description: "Task".into(),
+            description: Some("Task".into()),
         };
         let result = app.dispatch(command);
         assert!(result.is_ok());
@@ -199,7 +209,7 @@ mod tests {
         let mut app = App::new(Box::new(MockStorage::new()));
         for i in 1..=3 {
             let _result = app.dispatch(Commands::Create {
-                description: format!("Task {}", i),
+                description: Some(format!("Task {}", i)),
             });
         }
         for (i, task) in app.storage.list().iter().enumerate() {
@@ -211,7 +221,7 @@ mod tests {
     fn app_dispatch_removes_one_task() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let _result = app.dispatch(Commands::Create {
-            description: "Remove me".into(),
+            description: Some("Remove me".into()),
         });
         let command = Commands::Remove { id: 1 };
         let result = app.dispatch(command);
@@ -232,7 +242,7 @@ mod tests {
     fn app_dispatch_trying_to_remove_invalid_id_returns_task_not_found_error() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let _result = app.dispatch(Commands::Create {
-            description: "Task".into(),
+            description: Some("Task".into()),
         });
         let command = Commands::Remove { id: 2 };
         let result = app.dispatch(command);
@@ -244,7 +254,7 @@ mod tests {
     fn app_dispatch_update_no_options_prints_nothing_changed() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let _ = app.dispatch(Commands::Create {
-            description: "Task".into(),
+            description: Some("Task".into()),
         });
         let command = Commands::Update {
             id: 1,
@@ -259,7 +269,7 @@ mod tests {
     fn app_dispatch_update_only_description_updates_description_preserves_status() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let _ = app.dispatch(Commands::Create {
-            description: "Original".into(),
+            description: Some("Original".into()),
         });
         let command = Commands::Update {
             id: 1,
@@ -282,7 +292,7 @@ mod tests {
     fn app_dispatch_update_only_status_updates_status_preserves_description() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let _ = app.dispatch(Commands::Create {
-            description: "Task".into(),
+            description: Some("Task".into()),
         });
         let command = Commands::Update {
             id: 1,
@@ -305,7 +315,7 @@ mod tests {
     fn app_dispatch_update_both_description_and_status_updates_both() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let _ = app.dispatch(Commands::Create {
-            description: "Original".into(),
+            description: Some("Original".into()),
         });
         let command = Commands::Update {
             id: 1,
@@ -328,7 +338,7 @@ mod tests {
     fn app_dispatch_update_invalid_status_returns_error() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let _ = app.dispatch(Commands::Create {
-            description: "Task".into(),
+            description: Some("Task".into()),
         });
         let command = Commands::Update {
             id: 1,
@@ -343,7 +353,7 @@ mod tests {
     fn app_dispatch_update_nonexistent_id_returns_task_not_found() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let _ = app.dispatch(Commands::Create {
-            description: "Task".into(),
+            description: Some("Task".into()),
         });
         let command = Commands::Update {
             id: 99,
@@ -382,7 +392,7 @@ mod tests {
     #[test]
     fn app_dispatch_list_default_shows_todo_and_in_progress_but_not_done() {
         let mut app = App::new(Box::new(MockStorage::new()));
-        let _ = app.dispatch(Commands::Create { description: "Todo task".into() });
+        let _ = app.dispatch(Commands::Create { description: Some("Todo task".into()) });
         let command = Commands::List { all: false, status: None };
         let result = app.dispatch(command);
         assert!(result.is_ok());
@@ -408,6 +418,32 @@ mod tests {
     fn app_dispatch_list_with_status_done_uses_list_by_status() {
         let mut app = App::new(Box::new(MockStorage::new()));
         let command = Commands::List { all: false, status: Some("done".into()) };
+        let result = app.dispatch(command);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn app_dispatch_create_empty_description_returns_invalid_description_error() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let command = Commands::Create { description: Some("".into()) };
+        let result = app.dispatch(command);
+        assert!(result.is_err());
+        assert_eq!(result, Err(AppError::InvalidDescription));
+    }
+
+    #[test]
+    fn app_dispatch_create_whitespace_description_returns_invalid_description_error() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let command = Commands::Create { description: Some("   ".into()) };
+        let result = app.dispatch(command);
+        assert!(result.is_err());
+        assert_eq!(result, Err(AppError::InvalidDescription));
+    }
+
+    #[test]
+    fn app_dispatch_create_without_args_prints_usage_message() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+        let command = Commands::Create { description: None };
         let result = app.dispatch(command);
         assert!(result.is_ok());
     }
