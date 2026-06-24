@@ -89,6 +89,22 @@ impl Storage for JsonStorage {
             .filter(|t| t.status == status)
             .collect()
     }
+
+    fn clear_all(&mut self) -> Result<(), Self::Error> {
+        let mut tasks = self.read_tasks();
+        tasks.clear();
+        self.write_tasks(&tasks)?;
+        Ok(())
+    }
+
+    fn done_all(&mut self) -> Result<(), Self::Error> {
+        let mut tasks = self.read_tasks();
+        for task in &mut tasks {
+            task.status = Status::Done;
+        }
+        self.write_tasks(&tasks)?;
+        Ok(())
+    }
 }
 
 #[cfg(test)]

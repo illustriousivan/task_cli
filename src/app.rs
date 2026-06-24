@@ -3,6 +3,7 @@ mod commands;
 pub use commands::Commands;
 
 use clap::Parser;
+use std::io::{self, Write};
 use task_cli::core::status::parse_status;
 use task_cli::core::tasks::Status;
 use task_cli::storage::{Storage, StorageError};
@@ -113,6 +114,57 @@ impl App {
                 }
                 Ok(())
             }
+            Commands::Clear { yes, done } => {
+                let tasks = self.storage.list();
+
+                if tasks.is_empty() {
+                    return Ok(());
+                }
+
+                let should_proceed = if yes {
+                    true
+                } else {
+                    print!(
+                        "This will {} all tasks. Are you sure? (y/N): ",
+                        if done {
+                            "mark as done"
+                        } else {
+                            "remove them permanently"
+                        }
+                    );
+
+                    match io::stdout().flush() {
+                        Ok(_) => {}
+                        Err(_) => {
+                            println!("Operation cancelled due to I/O error.");
+                            return Ok(());
+                        }
+                    };
+
+                    let mut input = String::new();
+                    match io::stdin().read_line(&mut input) {
+                        Ok(_) => input.trim().to_lowercase() == "y",
+                        Err(_) => {
+                            println!("Operation cancelled due to I/O error.");
+                            return Ok(());
+                        }
+                    }
+                };
+
+                if !should_proceed {
+                    println!("Operation cancelled.");
+                    return Ok(());
+                }
+
+                if done {
+                    self.storage.done_all()?;
+                    println!("All tasks marked as done.");
+                } else {
+                    self.storage.clear_all()?;
+                    println!("All tasks removed.");
+                }
+                Ok(())
+            }
         }
     }
 }
@@ -192,6 +244,18 @@ mod tests {
                 .filter(|t| t.status == status)
                 .cloned()
                 .collect()
+        }
+
+        fn clear_all(&mut self) -> Result<(), Self::Error> {
+            self.tasks.clear();
+            Ok(())
+        }
+
+        fn done_all(&mut self) -> Result<(), Self::Error> {
+            for task in &mut self.tasks {
+                task.status = Status::Done;
+            }
+            Ok(())
         }
     }
 
@@ -484,6 +548,80 @@ mod tests {
         let mut app = App::new(Box::new(MockStorage::new()));
         let command = Commands::Create { description: None };
         let result = app.dispatch(command);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn app_dispatch_clear_all_removes_tasks() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+
+        // Create some tasks
+        for desc in ["Task 1", "Task 2", "Task 3"] {
+            let _ = app.dispatch(Commands::Create {
+                description: Some(desc.into()),
+            });
+        }
+
+        assert_eq!(app.storage.list().len(), 3);
+
+        let command = Commands::Clear {
+            yes: true,
+            done: false,
+        };
+        let result = app.dispatch(command);
+
+        assert!(result.is_ok());
+        assert_eq!(app.storage.list().len(), 0);
+    }
+
+    #[test]
+    fn app_dispatch_clear_all_with_done_marks_tasks_as_done() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+
+        for desc in ["Task 1", "Task 2"] {
+            let _ = app.dispatch(Commands::Create {
+                description: Some(desc.into()),
+            });
+        }
+
+        assert_eq!(app.storage.list().len(), 2);
+
+        let command = Commands::Clear {
+            yes: true,
+            done: true,
+        };
+        let result = app.dispatch(command);
+
+        assert!(result.is_ok());
+        assert_eq!(app.storage.list().len(), 2);
+        for task in &app.storage.list() {
+            assert_eq!(task.status, Status::Done);
+        }
+    }
+
+    #[test]
+    fn app_dispatch_clear_all_empty_storage_succeeds_silently() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+
+        let command = Commands::Clear {
+            yes: true,
+            done: false,
+        };
+        let result = app.dispatch(command);
+
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn app_dispatch_clear_all_with_done_empty_storage_succeeds_silently() {
+        let mut app = App::new(Box::new(MockStorage::new()));
+
+        let command = Commands::Clear {
+            yes: true,
+            done: true,
+        };
+        let result = app.dispatch(command);
+
         assert!(result.is_ok());
     }
 }
