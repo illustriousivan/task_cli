@@ -15,7 +15,10 @@ storage system.
   - `task_cli update <id> --description "New description"` — change the task description.
   - `task_cli update <id> --status done` — change the task status (case-insensitive).
   - Both options can be combined to update multiple fields at once.
-- **Remove Tasks**: Delete completed or no longer needed tasks.
+- **Clear All Tasks**: Remove all tasks at once with confirmation prompt, or mark them as done.
+  - `task_cli clear` — prompts for confirmation before removing all tasks (y/N).
+  - `task_cli clear --yes` — removes all tasks without prompting.
+  - `task_cli clear --done` — marks all tasks as Done instead of removing them.
 - **Status Tracking**: Categorize tasks into `Todo`, `InProgress`, or `Done`.
 - **JSON Persistence**: Automatically saves your tasks to a local JSON file.
 
@@ -94,10 +97,30 @@ Prerequisites: [Rust and Cargo](https://rustup.rs/)
   task_cli remove <id>
   ```
 
+- **Clear all tasks** (with confirmation):
+
+  ```bash
+  task_cli clear
+  # Prompts: "This will remove them permanently all tasks. Are you sure? (y/N): "
+  ```
+
+- **Clear all tasks without prompting**:
+
+  ```bash
+  task_cli clear --yes
+  ```
+
+- **Mark all tasks as done instead of removing**:
+
+  ```bash
+  task_cli clear --done
+  # Prompts: "This will mark as done all tasks. Are you sure? (y/N): "
+  ```
+
 ## 🏗 Architecture
 
 - `src/core/`: Contains the core domain models (`tasks.rs`) and status parsing (`status.rs`).
-- `src/app/commands.rs`: Command definitions for CLI operations (Create, List, Update, Remove).
+- `src/app/commands.rs`: Command definitions for CLI operations (Create, List, Update, Remove, Clear).
 - `src/storage/`: Handles data persistence, specifically `json_storage.rs` for file I/O.
 - `src/app.rs`: The main application logic and command dispatcher.
 
