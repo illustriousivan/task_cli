@@ -4,9 +4,9 @@ use clap::Subcommand;
 pub enum Commands {
     /// Create a new task with description
     #[command(name = "create")]
-    Create { 
+    Create {
         #[arg(long)]
-        description: Option<String>, 
+        description: Option<String>,
     },
 
     /// Remove a task by ID
@@ -15,12 +15,12 @@ pub enum Commands {
 
     /// Update an existing task
     #[command(name = "update")]
-    Update { 
-        id: u32, 
+    Update {
+        id: u32,
         #[arg(long)]
-        description: Option<String>, 
+        description: Option<String>,
         #[arg(long)]
-        status: Option<String>, 
+        status: Option<String>,
     },
 
     /// List all tasks
@@ -31,5 +31,15 @@ pub enum Commands {
 
         #[arg(long)]
         status: Option<String>,
+    },
+
+    /// Clear all tasks or mark them as done
+    #[command(name = "clear")]
+    Clear {
+        #[arg(long)]
+        yes: bool,
+
+        #[arg(long)]
+        done: bool,
     },
 }

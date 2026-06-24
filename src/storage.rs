@@ -17,4 +17,6 @@ pub trait Storage {
     fn remove(&mut self, id: u32) -> Result<(), Self::Error>;
     fn list(&self) -> Vec<Task>;
     fn list_by_status(&self, status: Status) -> Vec<Task>;
+    fn clear_all(&mut self) -> Result<(), Self::Error>;
+    fn done_all(&mut self) -> Result<(), Self::Error>;
 }
