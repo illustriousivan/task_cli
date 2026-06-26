@@ -8,10 +8,14 @@ storage system.
 ## 🚀 Features
 
 - **Create Tasks**: Add new tasks with custom descriptions.
-- **List Tasks**: View tasks filtered by status, or show all tasks with --all. Default shows only Todo and InProgress tasks.
-- **Update Tasks**: Modify existing tasks by description, status, or both simultaneously. Both options can be combined to update multiple fields at once.
-- **Remove Tasks**: Delete individual tasks by their unique identifier when they are no longer needed.
-- **Clear All Tasks**: Remove all tasks at once with confirmation prompt, or mark them as done.
+- **List Tasks**: View tasks filtered by status, or show all tasks with `--all`.
+Default shows only Todo and InProgress tasks.
+- **Update Tasks**: Modify existing tasks by description, status, or both
+simultaneously. Both options can be combined to update multiple fields at once.
+- **Remove Tasks**: Delete individual tasks by their unique identifier when they
+are no longer needed.
+- **Clear All Tasks**: Remove all tasks at once with confirmation prompt, or
+mark them as done.
 - **Status Tracking**: Categorize tasks into `Todo`, `InProgress`, or `Done`.
 - **JSON Persistence**: Automatically saves your tasks to a local JSON file.
 
@@ -93,8 +97,10 @@ Prerequisites: [Rust and Cargo](https://rustup.rs/)
 - **Clear all tasks** (with confirmation):
 
   ```bash
+
   task_cli clear
-  # Prompts: "This will remove them permanently all tasks. Are you sure? (y/N): "
+  # Prompts: This will remove them permanently all tasks. Are you sure? (y/N):
+ 
   ```
 
 - **Clear all tasks without prompting**:
@@ -106,15 +112,19 @@ Prerequisites: [Rust and Cargo](https://rustup.rs/)
 - **Mark all tasks as done instead of removing**:
 
   ```bash
+
   task_cli clear --done
-  # Prompts: "This will mark as done all tasks. Are you sure? (y/N): "
+  # Prompts: This will mark as done all tasks. Are you sure? (y/N):
+ 
   ```
 
 ## 🏗 Architecture
 
 - `src/core/`: Contains the core domain models (`tasks.rs`) and status parsing (`status.rs`).
-- `src/app/commands.rs`: Command definitions for CLI operations (Create, List, Update, Remove, Clear).
-- `src/storage/`: Handles data persistence, specifically `json_storage.rs` for file I/O.
+- `src/app/commands.rs`: Command definitions for CLI operations (Create, List,
+Update, Remove, Clear).
+- `src/storage/`: Handles data persistence, specifically `json_storage.rs`
+for file I/O.
 - `src/app.rs`: The main application logic and command dispatcher.
 
 ## 🤝 Contributing
