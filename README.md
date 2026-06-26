@@ -7,19 +7,11 @@ storage system.
 
 ## 🚀 Features
 
-- **Create Tasks**: Easily add new tasks with descriptions.
-- **List Tasks**: View tasks filtered by status, or show all tasks with `--all`.
-  - Default: shows only `Todo` and `InProgress` tasks.
-  - `task_cli list --status todo` — filter by specific status (case-insensitive).
-- **Update Tasks**: Modify existing tasks by description, status, or both simultaneously.
-  - `task_cli update <id> --description "New description"` — change the task description.
-  - `task_cli update <id> --status done` — change the task status (case-insensitive).
-  - Both options can be combined to update multiple fields at once.
+- **Create Tasks**: Add new tasks with custom descriptions.
+- **List Tasks**: View tasks filtered by status, or show all tasks with --all. Default shows only Todo and InProgress tasks.
+- **Update Tasks**: Modify existing tasks by description, status, or both simultaneously. Both options can be combined to update multiple fields at once.
 - **Remove Tasks**: Delete individual tasks by their unique identifier when they are no longer needed.
 - **Clear All Tasks**: Remove all tasks at once with confirmation prompt, or mark them as done.
-  - `task_cli clear` — prompts for confirmation before removing all tasks (y/N).
-  - `task_cli clear --yes` — removes all tasks without prompting.
-  - `task_cli clear --done` — marks all tasks as Done instead of removing them.
 - **Status Tracking**: Categorize tasks into `Todo`, `InProgress`, or `Done`.
 - **JSON Persistence**: Automatically saves your tasks to a local JSON file.
 
