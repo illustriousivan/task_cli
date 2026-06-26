@@ -22,6 +22,7 @@ mark them as done.
 ## 🛠 Tech Stack
 
 - **Language**: [Rust](https://www.rust-lang.org/)
+- **CLI Framework**: [Clap](https://clap.rs/)
 - **Serialization**: [Serde](https://serde.rs/)
 - **Storage**: Local JSON File System
 
