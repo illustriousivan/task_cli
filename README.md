@@ -15,6 +15,7 @@ storage system.
   - `task_cli update <id> --description "New description"` — change the task description.
   - `task_cli update <id> --status done` — change the task status (case-insensitive).
   - Both options can be combined to update multiple fields at once.
+- **Remove Tasks**: Delete individual tasks by their unique identifier when they are no longer needed.
 - **Clear All Tasks**: Remove all tasks at once with confirmation prompt, or mark them as done.
   - `task_cli clear` — prompts for confirmation before removing all tasks (y/N).
   - `task_cli clear --yes` — removes all tasks without prompting.
